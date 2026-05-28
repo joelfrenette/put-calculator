@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Close or hold &middot; short put decision</title>
+<style>
+  :root{
+    --bg:#faf9f5; --surface:#ffffff; --ink:#1c1b17; --muted:#6b6a62; --faint:#9a9890;
+    --line:rgba(28,27,23,.12); --line-strong:rgba(28,27,23,.22);
+    --go-bg:#e3f3ec; --go-ink:#0f6e56; --go-line:#1d9e75;
+    --wait-bg:#fbf0db; --wait-ink:#854f0b; --wait-line:#ba7517;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,sans-serif;
+    --radius:12px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#15140f; --surface:#1e1d17; --ink:#ecebe3; --muted:#a3a199; --faint:#6f6e66;
+      --line:rgba(236,235,227,.12); --line-strong:rgba(236,235,227,.22);
+      --go-bg:#0f2a22; --go-ink:#5dcaa5; --go-line:#1d9e75;
+      --wait-bg:#2e2410; --wait-ink:#ef9f27; --wait-line:#ba7517;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.6;-webkit-font-smoothing:antialiased;padding:28px 18px 60px}
+  .wrap{max-width:760px;margin:0 auto}
+  header{margin:0 0 22px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--faint);margin:0 0 8px}
+  h1{font-size:26px;font-weight:600;margin:0 0 6px;letter-spacing:-.01em}
+  header p{margin:0;color:var(--muted);font-size:15px;max-width:60ch}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+  .card{background:var(--surface);border:.5px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+  .card h2{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);font-weight:500;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+  label{display:block;font-size:13px;color:var(--muted);margin:0 0 5px}
+  input{width:100%;height:40px;padding:0 12px;font-family:var(--mono);font-size:15px;color:var(--ink);
+    background:var(--bg);border:.5px solid var(--line-strong);border-radius:8px;margin:0 0 13px;
+    -moz-appearance:textfield}
+  input:focus{outline:none;border-color:var(--go-line);box-shadow:0 0 0 3px var(--go-bg)}
+  input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .pair{display:flex;gap:12px}
+  .pair>div{flex:1}
+  .pair input{margin-bottom:0}
+  .verdict{border-radius:var(--radius);padding:20px;text-align:center;margin:16px 0 14px;
+    border:.5px solid var(--line)}
+  .verdict.go{background:var(--go-bg);border-color:var(--go-line)}
+  .verdict.wait{background:var(--wait-bg);border-color:var(--wait-line)}
+  .verdict .t{font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
+  .verdict.go .t{color:var(--go-ink)} .verdict.wait .t{color:var(--wait-ink)}
+  .verdict .e{font-size:14px;margin:8px 0 0;color:var(--ink);opacity:.88;max-width:62ch;
+    margin-left:auto;margin-right:auto}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+  .metric{background:var(--surface);border:.5px solid var(--line);border-radius:var(--radius);padding:16px}
+  .metric .k{font-size:12px;color:var(--muted);margin:0 0 6px}
+  .metric .v{font-family:var(--mono);font-size:23px;font-weight:600;margin:0;letter-spacing:-.02em}
+  .metric .s{font-family:var(--mono);font-size:12px;color:var(--faint);margin:5px 0 0}
+  .reset{margin:18px 0 0;font-family:var(--mono);font-size:12px;color:var(--muted);background:none;
+    border:.5px solid var(--line-strong);border-radius:8px;padding:8px 14px;cursor:pointer;
+    letter-spacing:.04em}
+  .reset:hover{border-color:var(--ink);color:var(--ink)}
+  footer{margin:26px 0 0;font-size:12px;color:var(--faint);line-height:1.7}
+  footer code{font-family:var(--mono);font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">manage winners &middot; return on capital / day</p>
+    <h1>Close or hold?</h1>
+    <p>For a winning short put: is the leftover daily rate worth holding, or do you close early and redeploy the capital into a better trade? Edit any field; it recalculates live.</p>
+  </header>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Put you're holding</h2>
+      <label for="oc">Original credit collected ($/share)</label>
+      <input type="number" id="oc" value="3.00" step="0.05" min="0" inputmode="decimal" />
+      <label for="pc">Cost to close now ($/share, the ask)</label>
+      <input type="number" id="pc" value="1.20" step="0.05" min="0" inputmode="decimal" />
+      <label for="ks">Strike ($/share)</label>
+      <input type="number" id="ks" value="100" step="1" min="0.01" inputmode="decimal" />
+      <label for="dr">Days left to expiry</label>
+      <input type="number" id="dr" value="7" step="1" min="0" inputmode="numeric" style="margin-bottom:0" />
+    </div>
+
+    <div class="card">
+      <h2>Best replacement found</h2>
+      <label for="cn">Credit you'd collect ($/share, the bid)</label>
+      <input type="number" id="cn" value="2.00" step="0.05" min="0" inputmode="decimal" />
+      <label for="kn">Strike ($/share)</label>
+      <input type="number" id="kn" value="100" step="1" min="0.01" inputmode="decimal" />
+      <label for="dn">Days to expiry</label>
+      <input type="number" id="dn" value="7" step="1" min="0.5" inputmode="numeric" />
+      <div class="pair">
+        <div>
+          <label for="fr">Round-trip cost / contract ($)</label>
+          <input type="number" id="fr" value="2" step="0.5" min="0" inputmode="decimal" />
+        </div>
+        <div>
+          <label for="mg">Safety margin (%)</label>
+          <input type="number" id="mg" value="25" step="5" min="0" inputmode="numeric" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict" id="verdict">
+    <p class="t" id="vtitle">&mdash;</p>
+    <p class="e" id="vexpl">&mdash;</p>
+  </div>
+
+  <div class="metrics">
+    <div class="metric">
+      <p class="k">Hold: remaining rate</p>
+      <p class="v" id="rocHold">&mdash;</p>
+      <p class="s" id="ann1"></p>
+    </div>
+    <div class="metric">
+      <p class="k">Redeploy: net rate</p>
+      <p class="v" id="rocNew">&mdash;</p>
+      <p class="s" id="ann2"></p>
+    </div>
+    <div class="metric">
+      <p class="k">Improvement</p>
+      <p class="v" id="improve">&mdash;</p>
+      <p class="s" id="captured"></p>
+    </div>
+  </div>
+
+  <button class="reset" id="reset" type="button">reset to example</button>
+
+  <footer>
+    Rates are return on capital per day, capital = strike (cash-secured basis). The verdict fires when the redeploy rate beats the hold rate plus your safety margin. It does <strong>not</strong> check earnings dates, the replacement's delta (assignment odds), or liquidity; those stay your gates before you act. Enter the bid you'd actually get filled at, not the mid. Not trading advice; you pull the trigger.
+  </footer>
+</div>
+
+<script>
+  // ---- inputs ----
+  var IDS = ["oc","pc","ks","dr","cn","kn","dn","fr","mg"];
+  var DEFAULTS = {oc:"3.00",pc:"1.20",ks:"100",dr:"7",cn:"2.00",kn:"100",dn:"7",fr:"2",mg:"25"};
+  function val(id){ return parseFloat(document.getElementById(id).value); }
+
+  // ---- formatting (round everything that hits the screen) ----
+  function perDay(x){ return (x*100).toFixed(3) + "% / day"; }
+  function annual(x){ return "\u2248 " + Math.round(x*36500) + "% / yr"; }
+
+  var box = document.getElementById("verdict");
+  var vtitle = document.getElementById("vtitle");
+  var vexpl = document.getElementById("vexpl");
+
+  function compute(){
+    var oc=val("oc"), pc=val("pc"), ks=val("ks"), dr=val("dr");
+    var cn=val("cn"), kn=val("kn"), dn=val("dn"), fr=val("fr"), mg=val("mg");
+
+    // remaining daily rate of the put you hold; capital = strike, profit left = current price
+    var rocHold = (ks>0 && dr>0) ? pc/(ks*dr) : NaN;
+    // net daily rate of the replacement after round-trip friction (per-contract cost / 100 = per share)
+    var fps = fr/100;
+    var rocNew = (kn>0 && dn>0) ? (cn-fps)/(kn*dn) : NaN;
+    var hurdle = isNaN(rocHold) ? NaN : rocHold*(1+mg/100);
+    var imp = (rocHold>0 && !isNaN(rocNew)) ? rocNew/rocHold : NaN;
+
+    document.getElementById("rocHold").textContent = isNaN(rocHold) ? "\u2014" : perDay(rocHold);
+    document.getElementById("ann1").textContent    = isNaN(rocHold) ? "" : annual(rocHold);
+    document.getElementById("rocNew").textContent  = isNaN(rocNew) ? "\u2014" : perDay(rocNew);
+    document.getElementById("ann2").textContent    = isNaN(rocNew) ? "" : annual(rocNew);
+    document.getElementById("improve").textContent = (isNaN(imp)||!isFinite(imp)) ? "\u2014" : imp.toFixed(2)+"\u00d7";
+    document.getElementById("captured").textContent = (oc>0) ? Math.round((oc-pc)/oc*100)+"% of max captured" : "";
+
+    box.className = "verdict";
+
+    if(pc<=0){
+      box.classList.add("go");
+      vtitle.textContent = "Already worthless \u2014 take it off";
+      vexpl.textContent = "Nothing left to earn by holding. Close for pennies or let it expire, and free the capital.";
+      return;
+    }
+    if(oc>0 && pc>=oc){
+      box.classList.add("wait");
+      vtitle.textContent = "Not a winner \u2014 wrong tool";
+      vexpl.textContent = "This position is underwater, so it's a loss-management decision, not a manage-winners one. Different rule entirely.";
+      return;
+    }
+    if(isNaN(rocHold) || isNaN(rocNew)){
+      vtitle.textContent = "Fill in the fields";
+      vexpl.textContent = "Strikes and day counts need to be above zero.";
+      return;
+    }
+    if(rocNew >= hurdle){
+      box.classList.add("go");
+      vtitle.textContent = "Close & redeploy";
+      vexpl.textContent = "The replacement earns " + imp.toFixed(2) + "\u00d7 the leftover daily rate (clearing your " + mg + "% margin), and you shed the high-gamma tail of the old trade. Two reasons to switch.";
+    } else {
+      box.classList.add("wait");
+      vtitle.textContent = "Hold for now";
+      vexpl.textContent = "The replacement (" + perDay(rocNew) + ") doesn't beat the hold rate plus margin (" + perDay(hurdle) + "). Not worth the friction yet; let it ride or wait for a better candidate.";
+    }
+  }
+
+  IDS.forEach(function(id){ document.getElementById(id).addEventListener("input", compute); });
+  document.getElementById("reset").addEventListener("click", function(){
+    IDS.forEach(function(id){ document.getElementById(id).value = DEFAULTS[id]; });
+    compute();
+  });
+  compute();
+</script>
+</body>
+</html>
